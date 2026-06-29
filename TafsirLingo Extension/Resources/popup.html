@@ -6,6 +6,16 @@
     <script type="module" src="popup.js"></script>
 </head>
 <body>
-    <strong>Hello World!</strong>
+    <main class="popup">
+        <div class="popup__status" id="status">
+            <span class="popup__dot" id="dot"></span>
+            <span class="popup__label" id="label">Checking…</span>
+        </div>
+        <button class="popup__cta" id="open-settings" type="button">Open Settings</button>
+        <div class="popup__shortcut">
+            <span>Shortcut</span>
+            <kbd id="shortcut">⌘⇧E</kbd>
+        </div>
+    </main>
 </body>
 </html>

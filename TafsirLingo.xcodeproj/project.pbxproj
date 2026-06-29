@@ -38,10 +38,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BEDE315B2FF27B9400C9A802 /* Exceptions for "TafsirLingo" folder in "TafsirLingo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BEDE31282FF27B9300C9A802 /* TafsirLingo */;
+		};
 		BEDE315C2FF27B9400C9A802 /* Exceptions for "TafsirLingo Extension" folder in "TafsirLingo Extension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Resources/content.bundle.js,
+				Resources/background.bundle.js,
 			);
 			target = BEDE31422FF27B9400C9A802 /* TafsirLingo Extension */;
 		};
@@ -50,6 +59,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BEDE312B2FF27B9300C9A802 /* TafsirLingo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BEDE315B2FF27B9400C9A802 /* Exceptions for "TafsirLingo" folder in "TafsirLingo" target */,
+			);
 			path = TafsirLingo;
 			sourceTree = "<group>";
 		};
@@ -61,6 +73,7 @@
 			explicitFolders = (
 				Resources/_locales,
 				Resources/images,
+				Resources/lib,
 			);
 			path = "TafsirLingo Extension";
 			sourceTree = "<group>";
@@ -131,6 +144,7 @@
 				BEDE313F2FF27B9400C9A802 /* Sources */,
 				BEDE31402FF27B9400C9A802 /* Frameworks */,
 				BEDE31412FF27B9400C9A802 /* Resources */,
+				BEDE31FE000000000000BEEF /* Bundle JS */,
 			);
 			buildRules = (
 			);
@@ -206,6 +220,33 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		BEDE31FE000000000000BEEF /* Bundle JS */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/TafsirLingo Extension/Resources/content.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/background.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/ai.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/bubble.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/bubbleCss.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/card.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/context.js",
+				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/markdown.js",
+			);
+			name = "Bundle JS";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/content.bundle.js",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/background.bundle.js",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\"$SRCROOT/Scripts/bundle.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXTargetDependency section */
 		BEDE31462FF27B9400C9A802 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -218,6 +259,7 @@
 		BEDE315E2FF27B9400C9A802 /* Debug configuration for PBXNativeTarget "TafsirLingo Extension" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "TafsirLingo Extension/TafsirLingo Extension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 926XCQXMCH;
@@ -226,20 +268,20 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TafsirLingo Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "TafsirLingo Extension";
+				INFOPLIST_KEY_CFBundleDisplayName = TafsirLingo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.TafsirLingo.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.tafsirlingo.Extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -253,6 +295,7 @@
 		BEDE315F2FF27B9400C9A802 /* Release configuration for PBXNativeTarget "TafsirLingo Extension" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "TafsirLingo Extension/TafsirLingo Extension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 926XCQXMCH;
@@ -261,20 +304,20 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TafsirLingo Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "TafsirLingo Extension";
+				INFOPLIST_KEY_CFBundleDisplayName = TafsirLingo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.TafsirLingo.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.tafsirlingo.Extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -323,7 +366,7 @@
 				DEVELOPMENT_TEAM = 926XCQXMCH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -387,7 +430,7 @@
 				DEVELOPMENT_TEAM = 926XCQXMCH;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -410,6 +453,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TafsirLingo/TafsirLingo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -418,11 +462,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TafsirLingo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TafsirLingo;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -434,7 +476,7 @@
 					"-framework",
 					WebKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.TafsirLingo;
+				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.tafsirlingo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -451,6 +493,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TafsirLingo/TafsirLingo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -459,11 +502,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TafsirLingo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TafsirLingo;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -475,7 +516,7 @@
 					"-framework",
 					WebKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.TafsirLingo;
+				PRODUCT_BUNDLE_IDENTIFIER = top.bayanlistening.tafsirlingo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

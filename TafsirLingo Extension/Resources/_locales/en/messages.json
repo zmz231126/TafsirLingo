@@ -1,10 +1,70 @@
 {
     "extension_name": {
-        "message": "TafsirLingo Extension",
+        "message": "TafsirLingo",
         "description": "The display name for the extension."
     },
     "extension_description": {
-        "message": "This is TafsirLingo Extension. You should tell us what your extension does here.",
+        "message": "Select text on any webpage and ask AI to explain its meaning in context.",
         "description": "Description of what the extension does."
+    },
+    "command_trigger_explain": {
+        "message": "Explain the current selection",
+        "description": "Description of the keyboard shortcut command."
+    },
+    "bubble_explain": {
+        "message": "Explain",
+        "description": "Label on the trigger bubble."
+    },
+    "card_loading": {
+        "message": "Thinking…",
+        "description": "Loading state copy in the explanation card."
+    },
+    "card_copy": {
+        "message": "Copy",
+        "description": "Copy action button label."
+    },
+    "card_retry": {
+        "message": "Retry",
+        "description": "Retry action button label."
+    },
+    "card_close": {
+        "message": "Close",
+        "description": "Close action button label."
+    },
+    "not_configured_title": {
+        "message": "Set up your AI first",
+        "description": "Title shown when the extension has no API key configured."
+    },
+    "not_configured_body": {
+        "message": "Add your API key in Settings to start explaining.",
+        "description": "Body text for the not configured card state."
+    },
+    "open_settings": {
+        "message": "Open Settings",
+        "description": "Button label that opens the native settings window."
+    },
+    "err_network": {
+        "message": "Network error. Check your connection.",
+        "description": "Network failure error copy."
+    },
+    "err_auth": {
+        "message": "Invalid API key. Check Settings.",
+        "description": "401/403 auth error copy."
+    },
+    "err_notfound": {
+        "message": "Model or endpoint not found. Check Settings.",
+        "description": "404 or model-not-found error copy."
+    },
+    "err_ratelimit": {
+        "message": "Rate limited. Try again shortly.",
+        "description": "429 rate limit error copy."
+    },
+    "err_timeout": {
+        "message": "Request timed out. Try again.",
+        "description": "Request timeout error copy."
+    },
+    "selection_too_long": {
+        "message": "Selection is long",
+        "description": "Hint on the bubble when selection is large."
     }
 }

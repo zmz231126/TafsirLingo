@@ -2,56 +2,23 @@
 //  ViewController.swift
 //  TafsirLingo
 //
-//  Created by Ken on 6/29/26.
+//  The original WKWebView homepage is intentionally left out of Phase 4+.
+//  SwiftUI's Window scene in TafsirLingoApp hosts the Liquid Glass settings UI
+//  directly. This file is kept as a placeholder so existing project references
+//  remain valid; no scene instantiates it because the app no longer uses
+//  a main storyboard (INFOPLIST_KEY_NSMainStoryboardFile was removed).
 //
 
 import Cocoa
-import SafariServices
-import WebKit
 
-let extensionBundleIdentifier = "top.bayanlistening.TafsirLingo.Extension"
+// MARK: - Retained for future "How to enable the Safari extension" guide page
+//
+// If you want to re-enable a WKWebView landing page, add
+// `INFOPLIST_KEY_NSMainStoryboardFile = Main` to both build configurations
+// and rebuild Main.storyboard. The original class looked up the extension
+// state via SFSafariExtensionManager.getStateOfSafariExtension and called
+// SFSafariApplication.showPreferencesForExtension when requested from JS.
 
-class ViewController: NSViewController, WKNavigationDelegate, WKScriptMessageHandler {
-
-    @IBOutlet var webView: WKWebView!
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        self.webView.navigationDelegate = self
-
-        self.webView.configuration.userContentController.add(self, name: "controller")
-
-        self.webView.loadFileURL(Bundle.main.url(forResource: "Main", withExtension: "html")!, allowingReadAccessTo: Bundle.main.resourceURL!)
-    }
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { (state, error) in
-            guard let state = state, error == nil else {
-                // Insert code to inform the user that something went wrong.
-                return
-            }
-
-            DispatchQueue.main.async {
-                if #available(macOS 13, *) {
-                    webView.evaluateJavaScript("show(\(state.isEnabled), true)")
-                } else {
-                    webView.evaluateJavaScript("show(\(state.isEnabled), false)")
-                }
-            }
-        }
-    }
-
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if (message.body as! String != "open-preferences") {
-            return;
-        }
-
-        SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { error in
-            DispatchQueue.main.async {
-                NSApplication.shared.terminate(nil)
-            }
-        }
-    }
-
+enum ExtensionSupport {
+    static let bundleIdentifier = "top.bayanlistening.tafsirlingo.Extension"
 }
