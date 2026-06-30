@@ -15,14 +15,18 @@ export function normalizeBaseURL(input, append = "/chat/completions") {
     throw new Error("baseURL must use https (or http for localhost)");
   }
 
-  // Strip trailing slash on the path; if it doesn't already end with /v1 (or
-  // already ends with /chat/completions), insert /v1 before appending the route.
+  // Strip trailing slash on the path.
   let path = url.pathname.replace(/\/+$/, "");
-  if (path === append) {
-    // already a full endpoint URL
-  } else if (/(^|\/)v\d+$/i.test(path)) {
-    // path already ends in /vN — keep as is
+  if (path.endsWith(append)) {
+    // already a full endpoint URL — nothing to do
+  } else if (path === "" || path === "/") {
+    // bare origin — add standard /v1 prefix
+    path = "/v1";
+  } else if (/(^|\/)v\d+/i.test(path)) {
+    // path already contains a version segment somewhere (e.g. /v1, /v1beta/openai, /api/paas/v4)
+    // just append the endpoint without adding another /v1
   } else {
+    // generic path without version info — add /v1
     path = path + "/v1";
   }
   url.pathname = path.replace(/\/+$/, "") + append;
@@ -33,62 +37,69 @@ function isLoopbackHost(hostname) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
 }
 
-export function systemPrompt(targetLang) {
-  // Resolve the language code into a name the model understands. Locale codes
-  // like "zh", "ar", "en" are ambiguous (zh = Mandarin? Cantonese?); mapping
-  // them avoids the model defaulting to English when it cannot tell.
-  const LANG_NAME = {
-    en: "English",
-    zh: "Simplified Chinese (简体中文)",
-    "zh-CN": "Simplified Chinese (简体中文)",
-    "zh-Hans": "Simplified Chinese (简体中文)",
-    "zh-Hant": "Traditional Chinese (繁體中文)",
-    ar: "Arabic (العربية)",
-    es: "Spanish (Español)",
-    fr: "French (Français)",
-    de: "German (Deutsch)",
-    ja: "Japanese (日本語)",
-    ko: "Korean (한국어)",
-    ru: "Russian (Русский)",
-    pt: "Portuguese (Português)",
-    it: "Italian (Italiano)",
-    tr: "Turkish (Türkçe)",
-    vi: "Vietnamese (Tiếng Việt)",
-    th: "Thai (ภาษาไทย)",
-    id: "Indonesian (Bahasa Indonesia)",
-  };
-  const raw = (targetLang || "English").trim();
-  const lang = LANG_NAME[raw.toLowerCase()] || raw;
+const LANG_NAME = {
+  en: "English",
+  zh: "Simplified Chinese (简体中文)",
+  "zh-CN": "Simplified Chinese (简体中文)",
+  "zh-Hans": "Simplified Chinese (简体中文)",
+  "zh-Hant": "Traditional Chinese (繁體中文)",
+  ar: "Arabic (العربية)",
+  es: "Spanish (Español)",
+  fr: "French (Français)",
+  de: "German (Deutsch)",
+  ja: "Japanese (日本語)",
+  ko: "Korean (한국어)",
+  ru: "Russian (Русский)",
+  pt: "Portuguese (Português)",
+  it: "Italian (Italiano)",
+  tr: "Turkish (Türkçe)",
+  vi: "Vietnamese (Tiếng Việt)",
+  th: "Thai (ภาษาไทย)",
+  id: "Indonesian (Bahasa Indonesia)",
+};
 
+function resolveLang(raw) {
+  return LANG_NAME[(raw || "English").trim().toLowerCase()] || raw;
+}
+
+/**
+ * System prompt — instructs the model to ONLY explain the selected text,
+ * using the page content purely as reference background.
+ */
+export function systemPrompt(targetLang) {
+  const lang = resolveLang(targetLang);
   return [
-    "You are a language learning assistant. The user selects text on a webpage and you explain it in context.",
+    "You are a friendly assistant helping a user understand selected text on a webpage.",
+    "",
+    "Your job is to explain the SELECTED TEXT only. The page content provided is just",
+    "background to help you give a contextually accurate explanation — do NOT summarize",
+    "or explain the page itself. Focus solely on what the selected text means.",
+    "",
     `Respond in ${lang}.`,
     "",
-    "Rule: Your entire response must be ONLY the explanation. First sentence is the answer. No introductions, no meta-commentary, no analysis of what the user is asking. Act as if the user already knows what they selected — just tell them what it means.",
-    "",
-    "Correct examples:",
-    "  User selected \"ribbon\" → \"A ribbon diagram is a 3D schematic that uses colored ribbons and arrows to show how a protein chain folds.\"",
-    "  User selected \"the quick brown fox\" → \"This is a pangram — a sentence containing every letter of the English alphabet, used for typing practice.\"",
-    "  User selected \"structure\" → \"Here it refers to the 3D arrangement of atoms in the protein — how the chain folds in space.\"",
-    "",
-    "Incorrect examples (never output these):",
-    "  \"The user is asking about...\"",
-    "  \"The user selected...\"",
-    "  \"In this context...\"",
-    "  \"This means that...\"",
-    "  \"Let me explain...\"",
-    "",
-    "Also forbidden: metadata labels (Part of speech:, Root:, Type:, Synonyms:), any form of list or enumeration, <think> blocks, chain-of-thought.",
+    "Explain naturally as if helping a friend, using examples and analogies when helpful.",
   ].join("\n");
 }
 
-export function userPrompt(text, context) {
-  return [
-    "Context (selected part marked with 【【】】):",
-    context,
+/**
+ * User prompt — physically separates the selected text (anchoring the model's
+ * attention) from the page context (background reference only).
+ *
+ * @param {string} text   - The exact text the user selected.
+ * @param {string} context- Cleaned page content with 【【】】 marking the selection.
+ * @param {object} [meta] - Optional page metadata: { title, url, description }.
+ */
+export function userPrompt(text, context, meta = {}) {
+  const parts = [
+    "── Selected text to explain ──",
+    text,
     "",
-    `Please explain: ${text} in 【【】】`
-  ].join("\n");
+    "── Page content for reference (【【】】 marks the selection below) ──",
+  ];
+  if (meta.title) parts.push(`Page: ${meta.title}`);
+  if (meta.url)    parts.push(`URL: ${meta.url}`);
+  parts.push("", context);
+  return parts.join("\n");
 }
 
 export function mapHttpStatus(status) {

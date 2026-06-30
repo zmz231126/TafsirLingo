@@ -10,6 +10,69 @@
 import SwiftUI
 import Combine
 
+// MARK: - Vendor model
+
+struct Vendor: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let baseURL: String
+    let defaultModel: String
+    let icon: String  // SF Symbol name
+
+    static let all: [Vendor] = [
+        Vendor(id: "custom",
+               name: "Custom",
+               baseURL: "",
+               defaultModel: "",
+               icon: "square.and.pencil"),
+        Vendor(id: "openai",
+               name: "OpenAI",
+               baseURL: "https://api.openai.com/v1",
+               defaultModel: "gpt-4o-mini",
+               icon: "sparkles"),
+        Vendor(id: "deepseek",
+               name: "DeepSeek",
+               baseURL: "https://api.deepseek.com",
+               defaultModel: "deepseek-v4-flash",
+               icon: "magnifyingglass"),
+        Vendor(id: "gemini",
+               name: "Google Gemini",
+               baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+               defaultModel: "gemini-2.5-flash",
+               icon: "leaf"),
+        Vendor(id: "zhipu",
+               name: "Zhipu AI (GLM)",
+               baseURL: "https://open.bigmodel.cn/api/paas/v4",
+               defaultModel: "glm-4-flash",
+               icon: "brain"),
+        Vendor(id: "moonshot",
+               name: "Moonshot (Kimi)",
+               baseURL: "https://api.moonshot.cn/v1",
+               defaultModel: "kimi-k2.5",
+               icon: "moon.stars"),
+        Vendor(id: "qwen",
+               name: "Alibaba Qwen",
+               baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+               defaultModel: "qwen-turbo",
+               icon: "cloud"),
+        Vendor(id: "siliconflow",
+               name: "SiliconFlow",
+               baseURL: "https://api.siliconflow.cn/v1",
+               defaultModel: "Qwen/Qwen2.5-72B-Instruct",
+               icon: "drop"),
+        Vendor(id: "yi",
+               name: "01.AI (Yi)",
+               baseURL: "https://api.01.ai/v1",
+               defaultModel: "yi-large",
+               icon: "number"),
+        Vendor(id: "minimax",
+               name: "MiniMax",
+               baseURL: "https://api.minimax.io",
+               defaultModel: "MiniMax-M3",
+               icon: "bolt"),
+    ]
+}
+
 @MainActor
 final class SettingsVM: ObservableObject {
 
@@ -27,6 +90,13 @@ final class SettingsVM: ObservableObject {
     @Published var testing = false
     @Published var testResult: TestResult? = nil
     @Published var lastSavedAt: Date? = nil
+    @Published var showVendorPicker = false
+
+    /// The currently selected vendor ID (derived from baseURL, nil if custom).
+    var currentVendorID: String? {
+        let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Vendor.all.first { $0.baseURL == trimmed }?.id
+    }
 
     let appGroup = "group.top.bayanlistening.tafsirlingo"
 
@@ -51,6 +121,14 @@ final class SettingsVM: ObservableObject {
             Keychain.write(apiKey, account: baseURL.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         lastSavedAt = Date()
+    }
+
+    /// Selects a vendor and updates base URL + model.
+    func selectVendor(_ vendor: Vendor) {
+        guard vendor.id != "custom" else { return }
+        baseURL = vendor.baseURL
+        model = vendor.defaultModel
+        save()
     }
 
     func testConnection() {

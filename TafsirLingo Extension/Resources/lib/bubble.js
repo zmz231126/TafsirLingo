@@ -27,6 +27,15 @@ export function showBubble(rect, onTrigger) {
   const shadow = host._shadow;
   hideBubble();
 
+  // Detect text direction from the current selection.
+  let isRTL = false;
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const node = sel.getRangeAt(0).startContainer;
+    const el = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+    if (el) isRTL = getComputedStyle(el).direction === "rtl";
+  }
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "lg-bubble";
@@ -47,6 +56,13 @@ export function showBubble(rect, onTrigger) {
   shadow.appendChild(btn);
   host._bubble = btn;
   positionBubble(host, btn, rect);
+
+  // Entry animation: slide from the direction the text reads toward.
+  // LTR → slide in from the right (+x), RTL → slide in from the left (-x).
+  const entryX = isRTL ? -14 : 14;
+  btn.style.setProperty("--entry-ox", `${entryX}px`);
+  btn.style.setProperty("--entry-oy", "0px");
+
   host.dataset.visible = "1";
 }
 

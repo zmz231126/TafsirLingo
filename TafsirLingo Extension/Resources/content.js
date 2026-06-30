@@ -7,14 +7,17 @@
 // Phase 1: selection pipeline (bubble + payload build).
 // Phase 2/3: connect to background for AI streaming, render Liquid Glass card.
 
-import { extractContext } from "./lib/context.js";
+import { extractContext, extractPageMeta } from "./lib/context.js";
 import { showBubble, hideBubble, positionBubble, bubbleHost } from "./lib/bubble.js";
 import { mountCard, getCardHost } from "./lib/card.js";
 
 const STATE = {
   card: null,
   activePort: null,
+  followUpPort: null,
   lastRange: null,
+  anchorRange: null,   // the Range the card is anchored to (for scroll-follow)
+  messages: [], // conversation history: [{role, text}]
 };
 
 const SELECTION_DEBOUNCE_MS = 120;
@@ -49,13 +52,24 @@ function onSelectionChange() {
 async function startExplain() {
   const payload = buildPayload();
   if (!payload) return;
+
+  // Capture selection rects BEFORE clearing STATE.lastRange
+  const selRects = captureSelectionRects();
+
   hideBubble();
+  // Save the anchor range *before* clearing STATE.lastRange so the card
+  // can follow this selection on scroll.
+  if (STATE.lastRange) STATE.anchorRange = STATE.lastRange.cloneRange();
   STATE.lastRange = null;
+
+  // Show glass-bubble highlight over the selected text
+  showSelectionHighlight(selRects);
 
   const anchorRect = payload.anchorRect;
   const card = await mountCard(anchorRect, {
     dir: payload.dir,
     title: payload.text,
+    originalText: payload.text,
   });
   STATE.card = card;
 
@@ -80,13 +94,67 @@ async function startExplain() {
 
   card.onRetry = () => { retryCount += 1; start(); };
   card.onClose = () => {
+    hideSelectionHighlight();
     try { port.disconnect(); } catch (_) { /* already closed */ }
     STATE.activePort = null;
     STATE.card = null;
+    STATE.anchorRange = null;
     card.dismiss();
   };
 
+  // Set up follow-up callback
+  card.onFollowUp = (text) => {
+    sendFollowUp(text, payload, card);
+  };
+
   start();
+}
+
+function sendFollowUp(text, payload, card) {
+  // Build full conversation history
+  const history = [
+    { role: "user", text: payload.text },
+    { role: "assistant", text: card._initialResponse || "" },
+  ];
+  // Add prior conversation messages
+  for (const msg of STATE.messages) {
+    history.push({ role: msg.role, text: msg.text });
+  }
+  // Add current user message
+  history.push({ role: "user", text });
+
+  // Open follow-up port
+  if (STATE.followUpPort) {
+    try { STATE.followUpPort.disconnect(); } catch (_) {}
+  }
+  const port = browser.runtime.connect({ name: "followup" });
+  STATE.followUpPort = port;
+
+  card.open(); // start streaming in chat mode
+  port.postMessage({ type: "FOLLOW_UP", payload, history });
+
+  let responseText = "";
+  port.onMessage.addListener((m) => {
+    switch (m.type) {
+      case "OPEN":     card.open(); break;
+      case "DELTA":
+        responseText += (m.text || "");
+        card.appendDelta(m.text || "");
+        break;
+      case "DONE":
+        card.done();
+        // Save to conversation history
+        STATE.messages.push({ role: "user", text });
+        STATE.messages.push({ role: "assistant", text: responseText });
+        break;
+      case "NOT_CONFIGURED": card.notConfigured(); break;
+      case "ERROR":    card.error(m.kind, m.message); break;
+    }
+  });
+
+  port.onDisconnect.addListener(() => {
+    if (STATE.followUpPort === port) STATE.followUpPort = null;
+  });
 }
 
 function buildPayload() {
@@ -96,12 +164,15 @@ function buildPayload() {
   const text = (sel?.toString() || "").trim();
   if (text.length < MIN_TEXT_LENGTH) return null;
   const { context, dir } = extractContext(range, text);
+  const { title, description } = extractPageMeta();
   const pageLang = (document.documentElement.lang || "").trim();
   return {
     text,
     context,
     pageLang,
     dir,
+    pageTitle: title,
+    pageDescription: description,
     pageUrl: location.href,
     selectionLen: text.length,
     tooLong: text.length > MAX_SELECTION_CHARS,
@@ -117,6 +188,7 @@ function maybeDismiss(e) {
   hideBubble();
 }
 
+let scrollRaf = 0;
 function onScroll() {
   // Bubble follows selection while visible.
   const host = bubbleHost();
@@ -128,12 +200,20 @@ function onScroll() {
       positionBubble(host, host._bubble, rect);
     }
   }
-  // Auto-close the card when the selection scrolls out of view.
-  if (STATE.card && STATE.lastRange) {
-    const r = STATE.lastRange.getBoundingClientRect();
-    if (r.bottom < -200 || r.top > window.innerHeight + 200) {
-      STATE.card.onClose && STATE.card.onClose();
-    }
+  // Card follows the anchor selection on scroll (rAF-throttled).
+  if (STATE.card && STATE.anchorRange) {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      if (!STATE.card || !STATE.anchorRange) return;
+      const r = STATE.anchorRange.getBoundingClientRect();
+      // Auto-close when the selection is scrolled far out of view.
+      if (r.bottom < -200 || r.top > window.innerHeight + 200) {
+        STATE.card.onClose && STATE.card.onClose();
+        return;
+      }
+      STATE.card.reposition(r);
+    });
   }
 }
 
@@ -145,6 +225,51 @@ function onKeydown(e) {
       hideBubble();
     }
   }
+}
+
+// ── Selection glass-bubble highlight ──
+
+/** Capture client rects for each line of the current selection. */
+function captureSelectionRects() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = STATE.lastRange || sel.getRangeAt(0);
+  if (!range) return null;
+  const rects = range.getClientRects();
+  if (!rects || rects.length === 0) {
+    // Fallback: single bounding rect
+    const br = range.getBoundingClientRect();
+    if (br.width === 0 || br.height === 0) return null;
+    return [br];
+  }
+  return Array.from(rects).filter((r) => r.width > 0 && r.height > 0);
+}
+
+/** Create glass-bead overlay segments over each line of selected text. */
+function showSelectionHighlight(rects) {
+  hideSelectionHighlight();
+  if (!rects || rects.length === 0) return;
+
+  const pad = 2;
+  rects.forEach((r, i) => {
+    const seg = document.createElement("div");
+    seg.className = "lg-sel-segment";
+    const radius = Math.max(3, Math.min((r.height + pad * 2) / 2, 8));
+    seg.style.cssText = [
+      `top:${r.top - pad}px`,
+      `left:${r.left - pad}px`,
+      `width:${r.width + pad * 2}px`,
+      `height:${r.height + pad * 2}px`,
+      `border-radius:${radius}px`,
+      `animation-delay:${i * 25}ms`,
+    ].join(";");
+    document.documentElement.appendChild(seg);
+  });
+}
+
+/** Remove the glass-bead highlight overlay. */
+function hideSelectionHighlight() {
+  document.querySelectorAll(".lg-sel-segment").forEach((el) => el.remove());
 }
 
 function debounce(fn, wait) {

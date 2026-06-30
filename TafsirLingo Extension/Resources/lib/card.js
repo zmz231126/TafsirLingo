@@ -21,6 +21,11 @@ const COPY = {
   loading:       { en: "Thinking…",          zh: "正在解释…" },
   copy:          { en: "Copy",               zh: "复制" },
   retry:         { en: "Retry",              zh: "重新解释" },
+  followUp:      { en: "Follow-up",         zh: "追问" },
+  back:          { en: "Back",              zh: "返回" },
+  send:          { en: "Send",              zh: "发送" },
+  you:           { en: "You",               zh: "你" },
+  ai:            { en: "AI",                zh: "AI" },
   close:         { en: "Close",              zh: "关闭" },
   openSettings:  { en: "Open Settings",      zh: "打开设置" },
   notCfgTitle:   { en: "Set up your AI first",
@@ -153,6 +158,15 @@ export async function mountCard(anchorRect, opts = {}) {
   title.className = "lg-card__title";
   title.textContent = truncate(opts.title || "", 140);
 
+  // Chat mode back button — pure arrow icon, no text, no background
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "lg-card__back";
+  backBtn.setAttribute("aria-label", t("back"));
+  backBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L5 8 L10 13"/></svg>';
+  backBtn.hidden = true;
+  backBtn.addEventListener("click", () => api._exitChat && api._exitChat());
+
   const body = document.createElement("div");
   body.className = "lg-card__md";
 
@@ -164,10 +178,10 @@ export async function mountCard(anchorRect, opts = {}) {
   closeBtn.type = "button";
   closeBtn.className = "lg-card__close";
   closeBtn.setAttribute("aria-label", t("close"));
-  closeBtn.textContent = "×";
+  closeBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4 L12 12 M12 4 L4 12"/></svg>';
   closeBtn.addEventListener("click", () => api._close && api._close());
 
-  card.append(closeBtn, inner);
+  card.append(closeBtn, backBtn, inner);
   inner.append(title, body, actions);
 
   // Apply stylesheet
@@ -192,7 +206,12 @@ export async function mountCard(anchorRect, opts = {}) {
     body,
     title,
     actions,
+    _chatMode: false,
+    _streamEl: null,       // streaming message element in chat mode
+    _streamText: "",        // accumulated text during streaming
+    _originalText: opts.originalText || "",
     setLoading() {
+      if (api._chatMode) return; // in chat mode, streaming is handled by appendDelta
       card.classList.remove("lg-card--error");
       body.innerHTML = "";
       const wrap = document.createElement("span");
@@ -205,10 +224,40 @@ export async function mountCard(anchorRect, opts = {}) {
       body.appendChild(wrap);
     },
     open() {
+      if (api._chatMode) {
+        // In chat mode, create a new AI message bubble for streaming
+        const msg = document.createElement("div");
+        msg.className = "lg-card__msg lg-card__msg--ai";
+
+        const label = document.createElement("span");
+        label.className = "lg-card__msg-label";
+        label.textContent = t("ai");
+        msg.appendChild(label);
+
+        const md = document.createElement("div");
+        md.className = "lg-card__md";
+        msg.appendChild(md);
+
+        const cursor = document.createElement("span");
+        cursor.className = "lg-card__cursor";
+        md.appendChild(cursor);
+
+        chatContainer.appendChild(msg);
+        api._streamEl = md;
+        api._streamText = "";
+        autoScroll(chatContainer);
+        return;
+      }
       body.innerHTML = "";
       body._streamText = "";
     },
     appendDelta(text) {
+      if (api._chatMode && api._streamEl) {
+        api._streamText += text;
+        renderMarkdown(api._streamEl, api._streamText);
+        autoScroll(chatContainer);
+        return;
+      }
       if (body._streamText === undefined) this.open();
       body._streamText += text;
       // During streaming the source text is still being assembled, so any
@@ -226,6 +275,31 @@ export async function mountCard(anchorRect, opts = {}) {
       autoFollow(body);
     },
     done() {
+      if (api._chatMode) {
+        // Finalize streaming AI message — add Copy button
+        if (api._streamEl && api._streamText) {
+          renderMarkdown(api._streamEl, api._streamText);
+          const msg = api._streamEl.closest(".lg-card__msg");
+          if (msg) {
+            const copyBtn = document.createElement("button");
+            copyBtn.type = "button";
+            copyBtn.className = "lg-card__msg-copy";
+            copyBtn.textContent = t("copy");
+            copyBtn.addEventListener("click", async () => {
+              try {
+                await navigator.clipboard.writeText(api._streamEl.innerText.trim());
+                copyBtn.textContent = "✓";
+                setTimeout(() => { copyBtn.textContent = t("copy"); }, 1200);
+              } catch (_) { /* silent */ }
+            });
+            msg.appendChild(copyBtn);
+          }
+        }
+        api._streamEl = null;
+        api._streamText = "";
+        focusInput(card);
+        return;
+      }
       // Final pass on the fully assembled text so we drop the trailing caret
       // and let the renderer close any blocks that became complete only when
       // the stream ended (e.g. a final ``` closing fence).
@@ -296,9 +370,103 @@ export async function mountCard(anchorRect, opts = {}) {
         }
       }, 170);
     },
+
+    // ── Chat mode ──
+    enterChatMode() {
+      if (api._chatMode) return;  // guard against double-entry
+      api._chatMode = true;
+      card.classList.add("lg-card--chat");
+      backBtn.hidden = false;
+
+      // Hide actions row — replace it with the input bar so the input
+      // occupies the exact slot the buttons used to.
+      actions.hidden = true;
+      const inputBar = createInputBar(api);
+      api._inputBar = inputBar;
+      actions.parentNode.insertBefore(inputBar, actions);
+
+      // Capture the initial AI response before clearing body
+      api._initialResponse = body._streamText || body.textContent || "";
+
+      // Clear body, create chat container
+      body.innerHTML = "";
+      body.className = "lg-card__chat";
+      const chatContainer = body;
+      api._chatContainer = chatContainer;
+
+      // Original selection as user message
+      if (api._originalText) {
+        const origMsg = document.createElement("div");
+        origMsg.className = "lg-card__msg lg-card__msg--user";
+        const origLabel = document.createElement("span");
+        origLabel.className = "lg-card__msg-label";
+        origLabel.textContent = t("you");
+        origMsg.appendChild(origLabel);
+        const origBubble = document.createElement("div");
+        origBubble.className = "lg-card__msg-bubble";
+        origBubble.textContent = api._originalText;
+        origMsg.appendChild(origBubble);
+        chatContainer.appendChild(origMsg);
+      }
+
+      // AI response as AI message
+      if (api._initialResponse) {
+        const aiMsg = document.createElement("div");
+        aiMsg.className = "lg-card__msg lg-card__msg--ai";
+        const aiLabel = document.createElement("span");
+        aiLabel.className = "lg-card__msg-label";
+        aiLabel.textContent = t("ai");
+        aiMsg.appendChild(aiLabel);
+        const aiMd = document.createElement("div");
+        aiMd.className = "lg-card__md";
+        renderMarkdown(aiMd, api._initialResponse);
+        aiMsg.appendChild(aiMd);
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "lg-card__msg-copy";
+        copyBtn.textContent = t("copy");
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(aiMd.innerText.trim());
+            copyBtn.textContent = "✓";
+            setTimeout(() => { copyBtn.textContent = t("copy"); }, 1200);
+          } catch (_) { /* silent */ }
+        });
+        aiMsg.appendChild(copyBtn);
+        chatContainer.appendChild(aiMsg);
+      }
+
+      title.textContent = opts.title || "";
+      autoScroll(chatContainer);
+      focusInput(card);
+    },
+    _exitChat() {
+      api._chatMode = false;
+      card.classList.remove("lg-card--chat");
+      backBtn.hidden = true;
+      // Remove the input bar, restore the actions row.
+      if (api._inputBar) {
+        api._inputBar.remove();
+        api._inputBar = null;
+      }
+      actions.hidden = false;
+      body.className = "lg-card__md";
+      // Re-render body content from chat messages
+      const aiMsgs = body.querySelectorAll(".lg-card__msg--ai .lg-card__md");
+      if (aiMsgs.length > 0) {
+        body.innerHTML = "";
+        aiMsgs.forEach(md => body.appendChild(md));
+      }
+      showActions(card, api, actions, opts);
+    },
+    // Reposition the card to follow the anchor selection on scroll.
+    reposition(anchorRect) {
+      positionCard(card, anchorRect, opts.dir === "rtl");
+    },
     onRetry: null,
     onClose: null,
     onOpenSettings: null,
+    onFollowUp: null, // callback: (text) => void, called when user sends a follow-up
     _close() { if (api.onClose) api.onClose(); else api.dismiss(); }
   };
 
@@ -324,7 +492,14 @@ function showActions(card, api, actions, opts) {
   retry.className = "lg-card__btn";
   retry.textContent = t("retry");
   retry.addEventListener("click", () => api.onRetry && api.onRetry());
-  actions.append(copy, retry);
+  const followUp = document.createElement("button");
+  followUp.type = "button";
+  followUp.className = "lg-card__btn lg-card__btn--primary";
+  followUp.textContent = t("followUp");
+  followUp.addEventListener("click", () => {
+    api.enterChatMode && api.enterChatMode();
+  });
+  actions.append(copy, retry, followUp);
   actions.hidden = false;
 }
 
@@ -360,6 +535,84 @@ function autoFollow(body) {
   if (!card) return;
   if (body._userScrolledUp) return;
   body.scrollTop = body.scrollHeight;
+}
+
+function autoScroll(container) {
+  // Auto-scroll chat container to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+function createInputBar(api) {
+  const bar = document.createElement("div");
+  bar.className = "lg-card__input-bar";
+
+  const input = document.createElement("textarea");
+  input.className = "lg-card__input";
+  input.placeholder = t("send");
+  input.rows = 1;
+
+  // Auto-resize textarea
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 72) + "px";
+  });
+
+  const send = () => {
+    const text = input.value.trim();
+    if (!text) return;
+    insertUserMessage(api, text);
+    input.value = "";
+    input.style.height = "auto";
+    if (api.onFollowUp) api.onFollowUp(text);
+  };
+
+  // Enter sends, Shift+Enter adds newline
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  const sendBtn = document.createElement("button");
+  sendBtn.type = "button";
+  sendBtn.className = "lg-card__send";
+  sendBtn.innerHTML = "↑";
+  sendBtn.addEventListener("click", send);
+
+  bar.append(input, sendBtn);
+  return bar;
+}
+
+// Insert a user message into the chat container, keeping the input bar
+// pinned to the bottom (messages stack above it).
+function insertUserMessage(api, text) {
+  const container = api._chatContainer;
+  if (!container) return;
+  const msg = document.createElement("div");
+  msg.className = "lg-card__msg lg-card__msg--user";
+  const label = document.createElement("span");
+  label.className = "lg-card__msg-label";
+  label.textContent = t("you");
+  msg.appendChild(label);
+  const bubble = document.createElement("div");
+  bubble.className = "lg-card__msg-bubble";
+  bubble.textContent = text;
+  msg.appendChild(bubble);
+  // Insert before the input bar so messages always stack above it.
+  if (api._inputBar && api._inputBar.parentNode === container) {
+    container.insertBefore(msg, api._inputBar);
+  } else {
+    container.appendChild(msg);
+  }
+  autoScroll(container);
+}
+
+function focusInput(card) {
+  // Query inside the card's shadow root — document.querySelector can't reach in.
+  const root = card.getRootNode();
+  const input = root.querySelector ? root.querySelector(".lg-card__input") : null;
+  if (input) input.focus();
 }
 
 function truncate(s, n) {

@@ -7,7 +7,8 @@
 import { normalizeBaseURL, systemPrompt, userPrompt, mapHttpStatus, extractErrorMessage } from "./lib/ai.js";
 
 const APP_ID = "top.bayanlistening.tafsirlingo";
-const PORT_NAME = "explain";
+const PORT_NAME_EXPLAIN = "explain";
+const PORT_NAME_FOLLOWUP = "followup";
 const FIRST_BYTE_TIMEOUT_MS = 15_000;
 
 browser.commands.onCommand.addListener(async (command) => {
@@ -33,7 +34,14 @@ browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 browser.runtime.onConnect.addListener((port) => {
-  if (port.name !== PORT_NAME) return;
+  if (port.name === PORT_NAME_EXPLAIN) {
+    handleExplainPort(port);
+  } else if (port.name === PORT_NAME_FOLLOWUP) {
+    handleFollowUpPort(port);
+  }
+});
+
+async function handleExplainPort(port) {
   let controller = null;
   let accepting = true;
 
@@ -49,14 +57,37 @@ browser.runtime.onConnect.addListener((port) => {
     controller = new AbortController();
     controller.signal.addEventListener("abort", () => { /* nothing else to do */ });
     try {
-      await runExplain(msg.payload, port, controller.signal);
+      await runExplain(msg.payload, port, controller.signal, () => accepting);
     } catch (e) {
       if (accepting) port.postMessage({ type: "ERROR", kind: "native", message: String(e) });
     }
   });
-});
+}
 
-async function runExplain(payload, port, signal) {
+async function handleFollowUpPort(port) {
+  let controller = null;
+  let accepting = true;
+
+  port.onDisconnect.addListener(() => {
+    accepting = false;
+    if (controller) controller.abort();
+  });
+
+  port.onMessage.addListener(async (msg) => {
+    if (!accepting) return;
+    if (msg?.type !== "FOLLOW_UP" || !msg.payload || !msg.history) return;
+    if (controller) controller.abort();
+    controller = new AbortController();
+    controller.signal.addEventListener("abort", () => { /* nothing else to do */ });
+    try {
+      await runFollowUp(msg.payload, msg.history, port, controller.signal, () => accepting);
+    } catch (e) {
+      if (accepting) port.postMessage({ type: "ERROR", kind: "native", message: String(e) });
+    }
+  });
+}
+
+async function runExplain(payload, port, signal, isAccepting) {
   let cfg;
   try {
     const r = await browser.runtime.sendNativeMessage(APP_ID, { type: "GET_CONFIG" });
@@ -82,7 +113,11 @@ async function runExplain(payload, port, signal) {
     stream: true,
     messages: [
       { role: "system", content: systemPrompt(cfg.targetLang) },
-      { role: "user", content: userPrompt(payload.text, payload.context) }
+      { role: "user", content: userPrompt(payload.text, payload.context, {
+        title: payload.pageTitle,
+        url: payload.pageUrl,
+        description: payload.pageDescription,
+      }) }
     ],
     // Disable thinking/reasoning for providers that support it (MiniMax-M3,
     // DeepSeek, etc.). Harmless if ignored by the provider.
@@ -115,8 +150,86 @@ async function runExplain(payload, port, signal) {
   }
 
   const firstByteTimer = setTimeout(() => {
-    if (controller) controller.abort();
-    if (accepting) {
+    if (isAccepting && isAccepting()) {
+      port.postMessage({ type: "ERROR", kind: "timeout", message: "first byte timeout" });
+    }
+  }, FIRST_BYTE_TIMEOUT_MS);
+
+  port.postMessage({ type: "OPEN" });
+  try {
+    await pumpSSE(res, port, () => { clearTimeout(firstByteTimer); });
+  } catch (e) {
+    if (signal.aborted) return;
+    return port.postMessage({ type: "ERROR", kind: "network", message: String(e) });
+  } finally {
+    clearTimeout(firstByteTimer);
+  }
+  port.postMessage({ type: "DONE" });
+}
+
+async function runFollowUp(payload, history, port, signal, isAccepting) {
+  let cfg;
+  try {
+    const r = await browser.runtime.sendNativeMessage(APP_ID, { type: "GET_CONFIG" });
+    cfg = r?.config;
+    cfg = { ...cfg, apiKey: r?.apiKey ?? "" };
+  } catch (e) {
+    return port.postMessage({ type: "ERROR", kind: "native", message: String(e) });
+  }
+
+  if (!cfg?.hasKey || !cfg.baseURL) {
+    return port.postMessage({ type: "NOT_CONFIGURED" });
+  }
+
+  let requestURL;
+  try {
+    requestURL = normalizeBaseURL(cfg.baseURL, "/chat/completions");
+  } catch (e) {
+    return port.postMessage({ type: "ERROR", kind: "url", message: String(e) });
+  }
+
+  // Build messages array: system prompt + conversation history
+  const messages = [
+    { role: "system", content: systemPrompt(cfg.targetLang) }
+  ];
+  for (const msg of history) {
+    messages.push({ role: msg.role, content: msg.text });
+  }
+
+  const body = {
+    model: cfg.model,
+    stream: true,
+    messages,
+    thinking: { type: "disabled" }
+  };
+
+  let res;
+  try {
+    res = await fetch(requestURL, {
+      method: "POST",
+      signal,
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+  } catch (e) {
+    if (signal.aborted) return;
+    return port.postMessage({ type: "ERROR", kind: "network", message: String(e) });
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    return port.postMessage({
+      type: "ERROR",
+      kind: mapHttpStatus(res.status),
+      message: extractErrorMessage(text)
+    });
+  }
+
+  const firstByteTimer = setTimeout(() => {
+    if (isAccepting && isAccepting()) {
       port.postMessage({ type: "ERROR", kind: "timeout", message: "first byte timeout" });
     }
   }, FIRST_BYTE_TIMEOUT_MS);

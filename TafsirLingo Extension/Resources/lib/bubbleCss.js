@@ -29,8 +29,8 @@ export const BUBBLE_CSS = `
   -webkit-user-select: none;
   opacity: 0;
   transform-origin: 50% 50%;
-  /* Base translate is driven by --tx/--ty so the entry animation (opacity
-     only) cannot lock the inline transform via fill-mode forwards. */
+  /* Base translate driven by --tx/--ty; entry animation slides from
+     --entry-ox/--entry-oy into place via @keyframes. */
   transform: translate(var(--tx, 0), var(--ty, 0));
   animation: lg-bubble-in 160ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   transition: transform 120ms ease;
@@ -41,8 +41,14 @@ export const BUBBLE_CSS = `
 .lg-bubble svg { color: #0a84ff; }
 
 @keyframes lg-bubble-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+    transform: translate(calc(var(--tx, 0) + var(--entry-ox, 0)), calc(var(--ty, 0) + var(--entry-oy, 0)));
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--tx, 0), var(--ty, 0));
+  }
 }
 
 @media (prefers-color-scheme: dark) {

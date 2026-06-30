@@ -164,6 +164,7 @@
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
 }
+.lg-card__actions[hidden] { display: none !important; }
 
 .lg-card__btn {
   appearance: none; -webkit-appearance: none;
@@ -191,17 +192,17 @@
 .lg-card__close {
   position: absolute;
   top: 8px; right: 8px;
-  width: 22px; height: 22px;
-  border-radius: 50%;
+  width: 20px; height: 20px;
   border: none;
-  background: rgba(0, 0, 0, 0.06);
+  background: transparent;
   color: var(--lg-fg-soft);
-  font: 600 14px/1 inherit;
+  font: 400 16px/1 inherit;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   z-index: 3;
+  padding: 0;
 }
-.lg-card__close:hover { background: rgba(0, 0, 0, 0.12); }
+.lg-card__close:hover { color: var(--lg-fg); }
 
 /* Animations */
 @keyframes lg-card-in {
@@ -261,6 +262,183 @@
   max-height: calc(60vh - 60px);
   overflow-y: auto;
   scrollbar-width: thin;
+}
+
+/* ── Chat mode (follow-up) ── */
+
+/* Chat body — scrollable container for messages */
+.lg-card__chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 8px;
+  max-height: calc(60vh - 100px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Message row */
+.lg-card__msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lg-card__msg--user {
+  align-items: flex-end;
+}
+.lg-card__msg--ai {
+  align-items: flex-start;
+}
+
+/* Label (user / AI) */
+.lg-card__msg-label {
+  font: 600 10px/1 inherit;
+  color: var(--lg-fg-soft);
+  padding: 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* User bubble */
+.lg-card__msg-bubble {
+  max-width: 88%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  unicode-bidi: plaintext;
+}
+.lg-card__msg--user .lg-card__msg-bubble {
+  background: rgba(10, 132, 255, 0.15);
+  color: var(--lg-fg);
+  border-bottom-right-radius: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  .lg-card__msg--user .lg-card__msg-bubble {
+    background: rgba(84, 159, 255, 0.22);
+  }
+}
+
+/* AI response area — same as current body but inside chat */
+.lg-card__msg--ai .lg-card__md {
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  unicode-bidi: plaintext;
+  padding: 4px 0 4px 4px;
+}
+
+/* Copy button on individual AI messages */
+.lg-card__msg-copy {
+  appearance: none; -webkit-appearance: none;
+  font: 500 10px/1 inherit;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(120, 120, 120, 0.12);
+  color: var(--lg-fg-soft);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.lg-card__msg-copy:hover { background: rgba(120, 120, 120, 0.22); }
+
+/* Input bar — compact, send button inside the text field */
+.lg-card__input-bar {
+  position: relative;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.lg-card__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 24px;
+  max-height: 72px;
+  padding: 4px 30px 4px 10px;   /* right padding leaves room for the send button */
+  border-radius: 8px;
+  border: 1px solid rgba(120, 120, 120, 0.25);
+  background: rgba(120, 120, 120, 0.08);
+  color: var(--lg-fg);
+  font: 12.5px/1.35 inherit;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.lg-card__input::placeholder {
+  color: var(--lg-fg-soft);
+}
+.lg-card__input:focus {
+  border-color: rgba(10, 132, 255, 0.6);
+  background: rgba(10, 132, 255, 0.06);
+}
+
+.lg-card__send {
+  position: absolute;
+  right: 6px;
+  bottom: 14px;                  /* sits inside the input, aligned with text */
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(10, 132, 255, 0.85);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 120ms ease, transform 80ms ease;
+}
+.lg-card__send:hover { background: rgba(10, 132, 255, 1); transform: scale(1.05); }
+.lg-card__send:active { transform: scale(0.95); }
+.lg-card__send:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+  background: rgba(120, 120, 120, 0.5);
+}
+
+/* Back button (exit follow-up mode) — pure arrow icon, no background */
+.lg-card__back {
+  position: absolute;
+  top: 8px; left: 8px;
+  width: 20px; height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--lg-fg-soft);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 3;
+  padding: 0;
+}
+.lg-card__back:hover { color: var(--lg-fg); }
+.lg-card__back svg { width: 16px; height: 16px; display: block; }
+.lg-card__back[hidden] { display: none !important; }
+
+/* Original selection highlight */
+.lg-card__orig {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--lg-fg-soft);
+  padding: 6px 10px;
+  border-left: 2px solid rgba(120, 120, 120, 0.35);
+  background: rgba(120, 120, 120, 0.06);
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Follow-up mode card — taller */
+.lg-card--chat {
+  max-height: 80vh;
 }
 
 /* Markdown body — built by lib/markdown.js from streamed AI text. */
@@ -326,3 +504,62 @@
 
 .lg-card__md strong { font-weight: 600; }
 .lg-card__md em { font-style: italic; }
+
+/* ── Selection bubble highlight (glass bead overlay on selected text) ──
+ * When the user clicks "Explain", each line of the selected text gets a
+ * translucent glass bead that animates in like a bubble inflating.
+ * Uses the same Liquid Glass recipe as the card: light tint, mild blur,
+ * rim highlights, and a springy pop-in animation.
+ */
+.lg-sel-segment {
+  position: fixed;
+  z-index: 2147483645;
+  pointer-events: none;
+  background: rgba(10, 132, 255, 0.05);
+  -webkit-backdrop-filter: blur(2px) saturate(120%);
+  backdrop-filter: blur(2px) saturate(120%);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 0.5px 0.5px rgba(255, 255, 255, 0.5),
+    inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.15);
+  transform-origin: center 85%;
+  will-change: transform, opacity;
+  animation: lg-sel-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes lg-sel-pop {
+  0%   { opacity: 0; transform: scale(0.65) translateY(4px); }
+  55%  { opacity: 1; transform: scale(1.04) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .lg-sel-segment {
+    background: rgba(84, 159, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 0.5px 0.5px rgba(255, 255, 255, 0.15),
+      inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-sel-segment {
+    animation: lg-sel-fade 120ms ease-out forwards;
+  }
+}
+@keyframes lg-sel-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-transparency: reduce) {
+  .lg-sel-segment {
+    background: rgba(10, 132, 255, 0.04);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    .lg-sel-segment { background: rgba(84, 159, 255, 0.06); }
+  }
+}

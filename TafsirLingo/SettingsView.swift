@@ -71,11 +71,40 @@ struct SettingsView: View {
     private var aiConfigCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                LabeledField(title: "Base URL",
-                             text: $vm.baseURL,
-                             placeholder: "https://api.openai.com/v1")
+                // Base URL row with vendor picker button
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Base URL").font(.caption.bold()).foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        TextField("https://api.openai.com/v1", text: $vm.baseURL)
+                            .textFieldStyle(.roundedBorder)
+                        Button {
+                            vm.showVendorPicker = true
+                        } label: {
+                            Image(systemName: "square.grid.2x2")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Select a provider")
+                    }
+                }
+                if let vid = vm.currentVendorID, vid != "custom" {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                        Text(vendorName(for: vid))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !vm.baseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Custom endpoint")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 Text("Supports any OpenAI-compatible interface.")
                     .font(.caption2).foregroundStyle(.secondary)
+                    .padding(.top, -4)
                 SecureFieldRevealable(title: "API Key", text: $vm.apiKey)
                 Text("Stored only in your Mac's Keychain. Never uploaded.")
                     .font(.caption2).foregroundStyle(.secondary)
@@ -107,7 +136,64 @@ struct SettingsView: View {
             .onChange(of: vm.baseURL) { _ in vm.save() }
             .onChange(of: vm.apiKey)  { _ in vm.save() }
             .onChange(of: vm.model)   { _ in vm.save() }
+            .sheet(isPresented: $vm.showVendorPicker) {
+                vendorPickerSheet
+            }
         }
+    }
+
+    /// Scrollable vendor picker sheet
+    private var vendorPickerSheet: some View {
+        NavigationStack {
+            List(Vendor.all) { vendor in
+                Button {
+                    vm.selectVendor(vendor)
+                    vm.showVendorPicker = false
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: vendor.icon)
+                            .font(.title3)
+                            .foregroundStyle(.blue)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(vendor.name)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            if !vendor.baseURL.isEmpty {
+                                Text(vendor.baseURL)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                            if !vendor.defaultModel.isEmpty {
+                                Text("Default model: \(vendor.defaultModel)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        Spacer()
+                        if vm.currentVendorID == vendor.id || (vendor.id == "custom" && vm.currentVendorID == nil) {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationTitle("Select Provider")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { vm.showVendorPicker = false }
+                }
+            }
+        }
+        .frame(minWidth: 360, minHeight: 420)
+    }
+
+    private func vendorName(for id: String) -> String {
+        Vendor.all.first { $0.id == id }?.name ?? id
     }
 
     private var preferenceCard: some View {
