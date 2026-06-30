@@ -40,3 +40,6 @@ Pods/
 
 # Node.js
 node_modules/
+
+# Temporary icon generation workspace
+.icon-gen/

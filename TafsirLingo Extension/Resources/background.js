@@ -188,9 +188,23 @@ async function runFollowUp(payload, history, port, signal, isAccepting) {
     return port.postMessage({ type: "ERROR", kind: "url", message: String(e) });
   }
 
-  // Build messages array: system prompt + conversation history
+  // Build messages array: system + grounded user message (selected text +
+  // page context, identical structure to the initial `runExplain`) +
+  // conversational log. Re-sending the page reference on every follow-up
+  // turn means the model can always look back at the source page, which
+  // matters when the user asks about details the initial explanation
+  // didn't cover. The same `userPrompt` template is reused so the framing
+  // stays consistent across turns.
   const messages = [
-    { role: "system", content: systemPrompt(cfg.targetLang) }
+    { role: "system", content: systemPrompt(cfg.targetLang) },
+    {
+      role: "user",
+      content: userPrompt(payload.text, payload.context, {
+        title: payload.pageTitle,
+        url: payload.pageUrl,
+        description: payload.pageDescription,
+      })
+    },
   ];
   for (const msg of history) {
     messages.push({ role: msg.role, content: msg.text });

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 100;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -23,12 +23,14 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		BEDE31622FF27B9400C9A802 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 				BEDE31442FF27B9400C9A802 /* TafsirLingo Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -49,8 +51,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Resources/content.bundle.js,
 				Resources/background.bundle.js,
+				Resources/content.bundle.js,
 			);
 			target = BEDE31422FF27B9400C9A802 /* TafsirLingo Extension */;
 		};
@@ -83,13 +85,17 @@
 /* Begin PBXFrameworksBuildPhase section */
 		BEDE31262FF27B9300C9A802 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BEDE31402FF27B9400C9A802 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -133,6 +139,8 @@
 				BEDE312B2FF27B9300C9A802 /* TafsirLingo */,
 			);
 			name = TafsirLingo;
+			packageProductDependencies = (
+			);
 			productName = TafsirLingo;
 			productReference = BEDE31292FF27B9300C9A802 /* TafsirLingo.app */;
 			productType = "com.apple.product-type.application";
@@ -148,10 +156,14 @@
 			);
 			buildRules = (
 			);
+			dependencies = (
+			);
 			fileSystemSynchronizedGroups = (
 				BEDE31472FF27B9400C9A802 /* TafsirLingo Extension */,
 			);
 			name = "TafsirLingo Extension";
+			packageProductDependencies = (
+			);
 			productName = "TafsirLingo Extension";
 			productReference = BEDE31432FF27B9400C9A802 /* TafsirLingo Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -197,34 +209,27 @@
 /* Begin PBXResourcesBuildPhase section */
 		BEDE31272FF27B9300C9A802 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BEDE31412FF27B9400C9A802 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		BEDE31252FF27B9300C9A802 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
-		BEDE313F2FF27B9400C9A802 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
-/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		BEDE31FE000000000000BEEF /* Bundle JS */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			inputFileListPaths = (
 			);
 			inputPaths = (
 				"$(SRCROOT)/TafsirLingo Extension/Resources/content.js",
@@ -237,6 +242,8 @@
 				"$(SRCROOT)/TafsirLingo Extension/Resources/lib/markdown.js",
 			);
 			name = "Bundle JS";
+			outputFileListPaths = (
+			);
 			outputPaths = (
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/content.bundle.js",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/background.bundle.js",
@@ -247,6 +254,23 @@
 		};
 /* End PBXShellScriptBuildPhase section */
 
+/* Begin PBXSourcesBuildPhase section */
+		BEDE31252FF27B9300C9A802 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BEDE313F2FF27B9400C9A802 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
 /* Begin PBXTargetDependency section */
 		BEDE31462FF27B9400C9A802 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -256,7 +280,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		BEDE315E2FF27B9400C9A802 /* Debug configuration for PBXNativeTarget "TafsirLingo Extension" */ = {
+		BEDE315E2FF27B9400C9A802 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "TafsirLingo Extension/TafsirLingo Extension.entitlements";
@@ -292,7 +316,7 @@
 			};
 			name = Debug;
 		};
-		BEDE315F2FF27B9400C9A802 /* Release configuration for PBXNativeTarget "TafsirLingo Extension" */ = {
+		BEDE315F2FF27B9400C9A802 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "TafsirLingo Extension/TafsirLingo Extension.entitlements";
@@ -328,7 +352,7 @@
 			};
 			name = Release;
 		};
-		BEDE31602FF27B9400C9A802 /* Debug configuration for PBXProject "TafsirLingo" */ = {
+		BEDE31602FF27B9400C9A802 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -392,7 +416,7 @@
 			};
 			name = Debug;
 		};
-		BEDE31612FF27B9400C9A802 /* Release configuration for PBXProject "TafsirLingo" */ = {
+		BEDE31612FF27B9400C9A802 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -448,7 +472,7 @@
 			};
 			name = Release;
 		};
-		BEDE31642FF27B9400C9A802 /* Debug configuration for PBXNativeTarget "TafsirLingo" */ = {
+		BEDE31642FF27B9400C9A802 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -488,7 +512,7 @@
 			};
 			name = Debug;
 		};
-		BEDE31652FF27B9400C9A802 /* Release configuration for PBXNativeTarget "TafsirLingo" */ = {
+		BEDE31652FF27B9400C9A802 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -534,25 +558,28 @@
 		BEDE31242FF27B9300C9A802 /* Build configuration list for PBXProject "TafsirLingo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BEDE31602FF27B9400C9A802 /* Debug configuration for PBXProject "TafsirLingo" */,
-				BEDE31612FF27B9400C9A802 /* Release configuration for PBXProject "TafsirLingo" */,
+				BEDE31602FF27B9400C9A802 /* Debug */,
+				BEDE31612FF27B9400C9A802 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BEDE315D2FF27B9400C9A802 /* Build configuration list for PBXNativeTarget "TafsirLingo Extension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BEDE315E2FF27B9400C9A802 /* Debug configuration for PBXNativeTarget "TafsirLingo Extension" */,
-				BEDE315F2FF27B9400C9A802 /* Release configuration for PBXNativeTarget "TafsirLingo Extension" */,
+				BEDE315E2FF27B9400C9A802 /* Debug */,
+				BEDE315F2FF27B9400C9A802 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BEDE31632FF27B9400C9A802 /* Build configuration list for PBXNativeTarget "TafsirLingo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BEDE31642FF27B9400C9A802 /* Debug configuration for PBXNativeTarget "TafsirLingo" */,
-				BEDE31652FF27B9400C9A802 /* Release configuration for PBXNativeTarget "TafsirLingo" */,
+				BEDE31642FF27B9400C9A802 /* Debug */,
+				BEDE31652FF27B9400C9A802 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

@@ -121,3 +121,25 @@ body {
         backdrop-filter: none;
     }
 }
+
+.popup__legal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 4px;
+    margin-top: 2px;
+    border-top: 1px solid var(--popup-border);
+    font-size: 11px;
+    color: var(--popup-fg-soft);
+}
+
+.popup__legal a {
+    color: var(--popup-fg-soft);
+    text-decoration: none;
+}
+
+.popup__legal a:hover {
+    color: var(--popup-fg);
+    text-decoration: underline;
+}

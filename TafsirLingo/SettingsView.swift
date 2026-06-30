@@ -13,6 +13,9 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var vm: SettingsVM
 
+    private static let privacyURL = URL(string: "https://bayanlistening.top/tafsirlingo/privacy")!
+    private static let termsURL = URL(string: "https://bayanlistening.top/tafsirlingo/terms")!
+
     var body: some View {
         // Apple HIG "Adopting Liquid Glass":
         //   "Reduce your use of custom backgrounds in controls and navigation
@@ -40,6 +43,7 @@ struct SettingsView: View {
                     }
                 }
                 aboutFooter
+                legalLinks
             }
             .padding(24)
         }
@@ -212,7 +216,8 @@ struct SettingsView: View {
                     Text("العربية").tag("ar")
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: vm.targetLang) { vm.save() }
+                // Persistence is handled by `targetLang`'s `didSet` in
+                // SettingsVM — no view-layer `.onChange` needed here.
                 Text("The language the AI uses to explain your selection.")
                     .font(.caption2).foregroundStyle(.secondary)
             }
@@ -246,6 +251,18 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 12)
+    }
+
+    private var legalLinks: some View {
+        HStack(spacing: 12) {
+            Link("Privacy Policy", destination: Self.privacyURL)
+            Text("·").foregroundStyle(.tertiary)
+            Link("Terms of Service", destination: Self.termsURL)
+            Spacer()
+        }
+        .font(.caption)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
     }
 }
 

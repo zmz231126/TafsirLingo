@@ -24,8 +24,6 @@ const COPY = {
   followUp:      { en: "Follow-up",         zh: "追问" },
   back:          { en: "Back",              zh: "返回" },
   send:          { en: "Send",              zh: "发送" },
-  you:           { en: "You",               zh: "你" },
-  ai:            { en: "AI",                zh: "AI" },
   close:         { en: "Close",              zh: "关闭" },
   openSettings:  { en: "Open Settings",      zh: "打开设置" },
   notCfgTitle:   { en: "Set up your AI first",
@@ -154,10 +152,6 @@ export async function mountCard(anchorRect, opts = {}) {
   const inner = document.createElement("div");
   inner.className = "lg-card__inner";
 
-  const title = document.createElement("p");
-  title.className = "lg-card__title";
-  title.textContent = truncate(opts.title || "", 140);
-
   // Chat mode back button — pure arrow icon, no text, no background
   const backBtn = document.createElement("button");
   backBtn.type = "button";
@@ -182,7 +176,7 @@ export async function mountCard(anchorRect, opts = {}) {
   closeBtn.addEventListener("click", () => api._close && api._close());
 
   card.append(closeBtn, backBtn, inner);
-  inner.append(title, body, actions);
+  inner.append(body, actions);
 
   // Apply stylesheet
   if (cardSheet) {
@@ -204,7 +198,6 @@ export async function mountCard(anchorRect, opts = {}) {
   const api = {
     el: card,
     body,
-    title,
     actions,
     _chatMode: false,
     _streamEl: null,       // streaming message element in chat mode
@@ -230,11 +223,6 @@ export async function mountCard(anchorRect, opts = {}) {
         // In chat mode, create a new AI message bubble for streaming
         const msg = document.createElement("div");
         msg.className = "lg-card__msg lg-card__msg--ai";
-
-        const label = document.createElement("span");
-        label.className = "lg-card__msg-label";
-        label.textContent = t("ai");
-        msg.appendChild(label);
 
         const md = document.createElement("div");
         md.className = "lg-card__md";
@@ -401,10 +389,6 @@ export async function mountCard(anchorRect, opts = {}) {
       if (api._originalText) {
         const origMsg = document.createElement("div");
         origMsg.className = "lg-card__msg lg-card__msg--user";
-        const origLabel = document.createElement("span");
-        origLabel.className = "lg-card__msg-label";
-        origLabel.textContent = t("you");
-        origMsg.appendChild(origLabel);
         const origBubble = document.createElement("div");
         origBubble.className = "lg-card__msg-bubble";
         origBubble.textContent = api._originalText;
@@ -416,10 +400,6 @@ export async function mountCard(anchorRect, opts = {}) {
       if (api._initialResponse) {
         const aiMsg = document.createElement("div");
         aiMsg.className = "lg-card__msg lg-card__msg--ai";
-        const aiLabel = document.createElement("span");
-        aiLabel.className = "lg-card__msg-label";
-        aiLabel.textContent = t("ai");
-        aiMsg.appendChild(aiLabel);
         const aiMd = document.createElement("div");
         aiMd.className = "lg-card__md";
         renderMarkdown(aiMd, api._initialResponse);
@@ -439,7 +419,6 @@ export async function mountCard(anchorRect, opts = {}) {
         chatContainer.appendChild(aiMsg);
       }
 
-      title.textContent = opts.title || "";
       autoScroll(chatContainer);
       focusInput(card);
     },
@@ -583,7 +562,11 @@ function createInputBar(api) {
   sendBtn.innerHTML = "↑";
   sendBtn.addEventListener("click", send);
 
-  bar.append(input, sendBtn);
+  const shell = document.createElement("div");
+  shell.className = "lg-card__input-shell";
+  shell.append(input, sendBtn);
+
+  bar.append(shell);
   return bar;
 }
 
@@ -594,10 +577,6 @@ function insertUserMessage(api, text) {
   if (!container) return;
   const msg = document.createElement("div");
   msg.className = "lg-card__msg lg-card__msg--user";
-  const label = document.createElement("span");
-  label.className = "lg-card__msg-label";
-  label.textContent = t("you");
-  msg.appendChild(label);
   const bubble = document.createElement("div");
   bubble.className = "lg-card__msg-bubble";
   bubble.textContent = text;

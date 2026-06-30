@@ -141,7 +141,20 @@ Note: if any telemetry, crash reporting, account, vocab notebook cloud sync, or 
 
 ### 3.5 Privacy Policy URL
 
-Apple requires a Privacy Policy URL. Before launch, a privacy policy page must be placed on the website. Recommended content:
+Apple requires a Privacy Policy URL. Before launch, a privacy policy page must be placed on the website.
+
+Production URLs (live as of release):
+
+| Document | URL |
+|----------|-----|
+| Privacy Policy | `https://bayanlistening.top/tafsirlingo/privacy` |
+| Terms of Service | `https://bayanlistening.top/tafsirlingo/terms` |
+
+Use the Privacy Policy URL when filling App Store Connect → App Information → Privacy Policy URL. The Terms of Service URL is not a required field in App Store Connect but the page must exist and the Settings → About section of the containing app must link to both (see §6).
+
+These pages live under `/tafsirlingo/` because the `bayanlistening.top` domain is shared with ReelScribe (the macOS video-learning app), which owns the `/privacy` and `/terms` paths. The subpath keeps the two products independent without buying a second domain.
+
+Recommended content for the privacy page:
 
 ```text
 TafsirLingo does not collect, store, or sell personal data.
@@ -279,6 +292,8 @@ Release:
 - [ ] Xcode Organizer Validate App succeeds.
 - [ ] App Privacy filled out.
 - [ ] Privacy Policy URL publicly accessible.
+- [ ] Settings → About in the containing app includes Privacy Policy and Terms of Service links that open the URLs from §3.5 in the user's default browser.
+- [ ] Extension popup includes a visible Privacy link (Chrome Web Store Limited Use requires the disclosure to be one click away from the extension UI; this also satisfies App Review's "easily accessible manner" requirement).
 - [ ] Availability excludes China mainland.
 - [ ] Review Notes filled in completely.
 

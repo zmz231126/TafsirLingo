@@ -18,7 +18,10 @@ const STATE = {
   lastRange: null,
   anchorRange: null,   // the Range the card is anchored to (for scroll-follow)
   messages: [], // conversation history: [{role, text}]
+  targetLang: "en",   // cached from native config; used to pick card direction
 };
+
+const APP_ID = "top.bayanlistening.tafsirlingo";
 
 const SELECTION_DEBOUNCE_MS = 120;
 const MIN_TEXT_LENGTH = 1;
@@ -65,10 +68,16 @@ async function startExplain() {
   // Show glass-bubble highlight over the selected text
   showSelectionHighlight(selRects);
 
+  // The AI reply's text direction must follow the language the model is
+  // actually writing in (targetLang), not the direction of the user's
+  // selected text. A user can select an Arabic word yet still ask for the
+  // explanation in Chinese — that reply must read LTR.
+  await refreshTargetLang();
+  payload.dir = dirForLang(STATE.targetLang);
+
   const anchorRect = payload.anchorRect;
   const card = await mountCard(anchorRect, {
     dir: payload.dir,
-    title: payload.text,
     originalText: payload.text,
   });
   STATE.card = card;
@@ -111,9 +120,12 @@ async function startExplain() {
 }
 
 function sendFollowUp(text, payload, card) {
-  // Build full conversation history
+  // `history` carries the conversational log only. The first user
+  // message (selected text + page context) is reconstructed in
+  // background.js `runFollowUp` from `payload`, so the same grounded
+  // prompt that the initial explain sends is included on every
+  // follow-up turn — otherwise the model loses the page reference.
   const history = [
-    { role: "user", text: payload.text },
     { role: "assistant", text: card._initialResponse || "" },
   ];
   // Add prior conversation messages
@@ -278,4 +290,18 @@ function debounce(fn, wait) {
     if (t) clearTimeout(t);
     t = setTimeout(() => fn.apply(this, args), wait);
   };
+}
+
+// ── AI reply language (targetLang) — used to pick card text direction ──
+
+async function refreshTargetLang() {
+  try {
+    const r = await browser.runtime.sendNativeMessage(APP_ID, { type: "GET_CONFIG" });
+    const lang = r?.config?.targetLang;
+    if (typeof lang === "string" && lang) STATE.targetLang = lang;
+  } catch (_) { /* keep previous value */ }
+}
+
+function dirForLang(lang) {
+  return lang === "ar" ? "rtl" : "ltr";
 }

@@ -79,7 +79,19 @@ final class SettingsVM: ObservableObject {
     @Published var baseURL: String = ""
     @Published var apiKey:  String = ""
     @Published var model:   String = ""
-    @Published var targetLang: String = SettingsVM.detectSystemLanguage()
+
+    // `targetLang` owns its own persistence: every change writes to UserDefaults
+    // immediately via `didSet`, so we don't depend on the SwiftUI view layer's
+    // `.onChange` (which can be unreliable for segmented Picker bindings under
+    // DispatchQueue.main.async-wrapped setters).
+    @Published var targetLang: String = SettingsVM.detectSystemLanguage() {
+        didSet {
+            guard oldValue != targetLang else { return }
+            guard !_suppressTargetLangSave else { return }
+            UserDefaults(suiteName: appGroup)?.set(targetLang, forKey: "targetLang")
+            lastSavedAt = Date()
+        }
+    }
 
     private static func detectSystemLanguage() -> String {
         if let code = Locale.current.language.languageCode?.identifier {
@@ -92,6 +104,10 @@ final class SettingsVM: ObservableObject {
     var lastSavedAt: Date? = nil
     @Published var showVendorPicker = false
 
+    /// Set to `true` while `load()` is running so the `didSet` writer does not
+    /// re-persist the value we just read from UserDefaults.
+    private var _suppressTargetLangSave = false
+
     /// The currently selected vendor ID (derived from baseURL, nil if custom).
     var currentVendorID: String? {
         let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -100,7 +116,11 @@ final class SettingsVM: ObservableObject {
 
     let appGroup = "group.top.bayanlistening.tafsirlingo"
 
-    init() { load() }
+    init() {
+        _suppressTargetLangSave = true
+        load()
+        _suppressTargetLangSave = false
+    }
 
     func load() {
         let d = UserDefaults(suiteName: appGroup)
