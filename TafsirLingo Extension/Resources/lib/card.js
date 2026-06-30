@@ -225,6 +225,8 @@ export async function mountCard(anchorRect, opts = {}) {
     },
     open() {
       if (api._chatMode) {
+        const container = api._chatContainer;
+        if (!container) return;
         // In chat mode, create a new AI message bubble for streaming
         const msg = document.createElement("div");
         msg.className = "lg-card__msg lg-card__msg--ai";
@@ -242,10 +244,10 @@ export async function mountCard(anchorRect, opts = {}) {
         cursor.className = "lg-card__cursor";
         md.appendChild(cursor);
 
-        chatContainer.appendChild(msg);
+        container.appendChild(msg);
         api._streamEl = md;
         api._streamText = "";
-        autoScroll(chatContainer);
+        autoScroll(container);
         return;
       }
       body.innerHTML = "";
@@ -255,7 +257,8 @@ export async function mountCard(anchorRect, opts = {}) {
       if (api._chatMode && api._streamEl) {
         api._streamText += text;
         renderMarkdown(api._streamEl, api._streamText);
-        autoScroll(chatContainer);
+        const container = api._chatContainer;
+        if (container) autoScroll(container);
         return;
       }
       if (body._streamText === undefined) this.open();

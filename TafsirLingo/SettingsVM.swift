@@ -89,7 +89,7 @@ final class SettingsVM: ObservableObject {
     }
     @Published var testing = false
     @Published var testResult: TestResult? = nil
-    @Published var lastSavedAt: Date? = nil
+    var lastSavedAt: Date? = nil
     @Published var showVendorPicker = false
 
     /// The currently selected vendor ID (derived from baseURL, nil if custom).

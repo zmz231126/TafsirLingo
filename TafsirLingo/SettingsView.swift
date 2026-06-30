@@ -133,9 +133,9 @@ struct SettingsView: View {
                     Spacer()
                 }
             }
-            .onChange(of: vm.baseURL) { _ in vm.save() }
-            .onChange(of: vm.apiKey)  { _ in vm.save() }
-            .onChange(of: vm.model)   { _ in vm.save() }
+            .onChange(of: vm.baseURL) { vm.save() }
+            .onChange(of: vm.apiKey)  { vm.save() }
+            .onChange(of: vm.model)   { vm.save() }
             .sheet(isPresented: $vm.showVendorPicker) {
                 vendorPickerSheet
             }
@@ -200,13 +200,19 @@ struct SettingsView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Explanation").font(.headline)
-                Picker("Explain in", selection: $vm.targetLang) {
+                Picker("Explain in",
+                       selection: Binding(
+                           get: { vm.targetLang },
+                           set: { newValue in
+                               DispatchQueue.main.async { vm.targetLang = newValue }
+                           }
+                       )) {
                     Text("English").tag("en")
                     Text("中文").tag("zh")
                     Text("العربية").tag("ar")
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: vm.targetLang) { _ in vm.save() }
+                .onChange(of: vm.targetLang) { vm.save() }
                 Text("The language the AI uses to explain your selection.")
                     .font(.caption2).foregroundStyle(.secondary)
             }
